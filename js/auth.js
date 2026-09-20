@@ -1,182 +1,143 @@
+// js/auth.js
+
 document.addEventListener('DOMContentLoaded', () => {
-  initAuth();
+  initGoogleAuth();
+  checkAuthSession();
+  setupLogout();
 });
 
-let currentUser = null;
-
-function initAuth() {
-  const loginBtn = document.getElementById('google-login-btn');
-  const logoutBtn = document.getElementById('logout-btn');
-
-  // Verificar si ya existe una sesión guardada en el navegador
-  checkExistingSession();
-
-  // Escuchar evento de Login
-  loginBtn.addEventListener('click', handleGoogleLogin);
-
-  // Escuchar evento de Logout
-  logoutBtn.addEventListener('click', handleLogout);
-}
-
-// Handler de Inicio de Sesión
-function handleGoogleLogin() {
-  const errorDiv = document.getElementById('login-error');
-  errorDiv.classList.add('hidden');
-
-  // Si tenemos configurado el Client ID oficial de Google
-  if (window.google && CONFIG.GOOGLE_CLIENT_ID && !CONFIG.GOOGLE_CLIENT_ID.includes('TU_GOOGLE_CLIENT_ID')) {
+// Inicializar Google Sign-In SDK
+function initGoogleAuth() {
+  const googleBtn = document.getElementById('google-login-btn');
+  
+  if (typeof google !== 'undefined' && google.accounts) {
     google.accounts.id.initialize({
       client_id: CONFIG.GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse
+      callback: handleCredentialResponse,
+      auto_select: false
     });
-    google.accounts.id.prompt(); // Muestra el pop-up nativo de Google
-  } else {
-    // Modo de desarrollo/fallback interactivo si aún no has configurado Google Cloud Console
-    const userEmail = prompt("Ingresa tu correo electrónico para ingresar a Comovamos:");
-    if (!userEmail) return;
 
-    verifyUserWithBackend({
-      email: userEmail.trim().toLowerCase(),
-      name: userEmail.split('@')[0].replace('.', ' '),
-      picture: ''
-    });
+    if (googleBtn) {
+      googleBtn.addEventListener('click', () => {
+        if (CONFIG.GOOGLE_CLIENT_ID.includes('TU_GOOGLE_CLIENT_ID')) {
+          simulateDevLogin();
+        } else {
+          google.accounts.id.prompt();
+        }
+      });
+    }
+  } else if (googleBtn) {
+    googleBtn.addEventListener('click', simulateDevLogin);
   }
 }
 
-// Procesar credencial decodificada de Google GIS
+// Procesar credencial devuelta por Google
 function handleCredentialResponse(response) {
   try {
     const payload = parseJwt(response.credential);
-    verifyUserWithBackend({
+    const userSession = {
+      name: payload.name || payload.email.split('@')[0],
       email: payload.email,
-      name: payload.name,
-      picture: payload.picture
-    });
-  } catch (error) {
-    showLoginError("Error al procesar las credenciales de Google.");
+      picture: payload.picture || '',
+      role: CONFIG.ROLES.SUPER_ADMIN
+    };
+
+    saveUserSession(userSession);
+  } catch (err) {
+    showLoginError('Error al autenticar con Google. Intente nuevamente.');
   }
 }
 
-// Validar usuario contra la base de datos en Google Sheets (Apps Script)
-async function verifyUserWithBackend(googleUser) {
-  const loginBtn = document.getElementById('google-login-btn');
-  loginBtn.disabled = true;
-  loginBtn.querySelector('span').textContent = 'Verificando acceso...';
-
-  try {
-    // Si la API_URL aún no está configurada, permitimos acceso temporal para desarrollo
-    if (CONFIG.API_URL.includes('TU_SCRIPT_ID')) {
-      console.warn("API_URL no configurada. Iniciando sesión en modo desarrollo.");
-      const mockUser = {
-        id: 'usr_dev',
-        email: googleUser.email,
-        name: googleUser.name || 'Usuario Dev',
-        role: googleUser.email.includes('admin') ? CONFIG.ROLES.SUPER_ADMIN : CONFIG.ROLES.COLLABORATOR,
-        avatar_url: googleUser.picture || ''
-      };
-      completeLogin(mockUser);
-      return;
-    }
-
-    // Petición al backend en GAS
-    const response = await fetch(`${CONFIG.API_URL}?action=getUsers`);
-    const result = await response.json();
-
-    if (result.status === 'success') {
-      const usersList = result.data;
-      // Buscar si el correo está registrado en la hoja Users
-      const authorizedUser = usersList.find(u => u.email.toLowerCase() === googleUser.email.toLowerCase());
-
-      if (authorizedUser) {
-        completeLogin({
-          id: authorizedUser.id,
-          email: authorizedUser.email,
-          name: authorizedUser.name,
-          role: authorizedUser.role,
-          avatar_url: googleUser.picture || authorizedUser.avatar_url
-        });
-      } else {
-        showLoginError(`El correo ${googleUser.email} no está autorizado. Contacta al Administrador de Comovamos.`);
-      }
-    } else {
-      throw new Error(result.message);
-    }
-  } catch (error) {
-    showLoginError("Error de conexión con el servidor. Revisa tu URL de Apps Script.");
-    console.error("Auth Error:", error);
-  } finally {
-    loginBtn.disabled = false;
-    loginBtn.querySelector('span').textContent = 'Iniciar sesión con Google';
-  }
+// Login simulado para entorno local o desarrollo
+function simulateDevLogin() {
+  const devUser = {
+    name: 'Robert Palencia',
+    email: 'robertpalencia2020@gmail.com',
+    picture: 'https://lh3.googleusercontent.com/a/default-user',
+    role: CONFIG.ROLES.SUPER_ADMIN
+  };
+  saveUserSession(devUser);
 }
 
-// Finalizar Login y transición de pantalla
-function completeLogin(userData) {
-  currentUser = userData;
-  localStorage.setItem('comovamos_session', JSON.stringify(userData));
-
-  // Inyectar datos en el Navbar
-  document.getElementById('user-name').textContent = userData.name;
-  document.getElementById('user-role').textContent = userData.role;
-  
-  const avatarImg = document.getElementById('user-avatar');
-  if (userData.avatar_url) {
-    avatarImg.src = userData.avatar_url;
-    avatarImg.classList.remove('hidden');
-  } else {
-    avatarImg.classList.add('hidden');
-  }
-
-  // Transición visual: Ocultar Login, Mostrar Dashboard App
-  document.getElementById('login-screen').classList.remove('active');
-  document.getElementById('login-screen').classList.add('hidden');
-  
-  document.getElementById('app-screen').classList.remove('hidden');
-  document.getElementById('app-screen').classList.add('active');
-
-  // Disparar evento para cargar datos del dashboard
-  if (window.onUserLoggedIn) {
-    window.onUserLoggedIn(currentUser);
-  }
+// Decodificar Token JWT
+function parseJwt(token) {
+  const base64Url = token.split('.')[1];
+  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+  const jsonPayload = decodeURIComponent(atob(base64).split('').map(c => {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join(''));
+  return JSON.parse(jsonPayload);
 }
 
-// Cierre de Sesión
-function handleLogout() {
-  localStorage.removeItem('comovamos_session');
-  currentUser = null;
-
-  document.getElementById('app-screen').classList.remove('active');
-  document.getElementById('app-screen').classList.add('hidden');
-
-  document.getElementById('login-screen').classList.remove('hidden');
-  document.getElementById('login-screen').classList.add('active');
+// Guardar sesión y actualizar UI
+function saveUserSession(user) {
+  localStorage.setItem(CONFIG.STORAGE_KEYS.USER_SESSION, JSON.stringify(user));
+  applyUserSession(user);
 }
 
-// Verificar si hay sesión activa guardada
-function checkExistingSession() {
-  const savedSession = localStorage.getItem('comovamos_session');
-  if (savedSession) {
+// Verificar si existe sesión guardada
+function checkAuthSession() {
+  const savedUser = localStorage.getItem(CONFIG.STORAGE_KEYS.USER_SESSION);
+  if (savedUser) {
     try {
-      const userData = JSON.parse(savedSession);
-      completeLogin(userData);
+      const user = JSON.parse(savedUser);
+      applyUserSession(user);
     } catch (e) {
-      localStorage.removeItem('comovamos_session');
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_SESSION);
+      showLoginScreen();
     }
+  } else {
+    showLoginScreen();
+  }
+}
+
+// Mostrar interfaz principal y cargar datos del usuario
+function applyUserSession(user) {
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-screen').classList.remove('hidden');
+
+  const nameEl = document.getElementById('user-name');
+  const roleEl = document.getElementById('user-role');
+  const avatarEl = document.getElementById('user-avatar');
+
+  if (nameEl) nameEl.textContent = user.name;
+  if (roleEl) roleEl.textContent = user.role || CONFIG.ROLES.COLLABORATOR;
+
+  if (avatarEl) {
+    if (user.picture && !user.picture.includes('default-user')) {
+      avatarEl.src = user.picture;
+      avatarEl.classList.remove('hidden');
+    } else {
+      avatarEl.classList.add('hidden');
+    }
+  }
+
+  // Notificar a app.js para refrescar datos
+  if (typeof initTasksModule === 'function') {
+    initTasksModule();
+  }
+}
+
+function showLoginScreen() {
+  document.getElementById('app-screen').classList.add('hidden');
+  document.getElementById('login-screen').classList.remove('hidden');
+}
+
+// Configurar cierre de sesión
+function setupLogout() {
+  const logoutBtn = document.getElementById('logout-btn');
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      localStorage.removeItem(CONFIG.STORAGE_KEYS.USER_SESSION);
+      showLoginScreen();
+    });
   }
 }
 
 function showLoginError(msg) {
-  const errorDiv = document.getElementById('login-error');
-  errorDiv.textContent = msg;
-  errorDiv.classList.remove('hidden');
-}
-
-// Utilidad para decodificar JWT Tokens de Google
-function parseJwt(token) {
-  const base64Url = token.split('.')[1];
-  const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-  const jsonPayload = decodeURIComponent(window.atob(base64).split('').map(c => {
-    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join(''));
-  return JSON.parse(jsonPayload);
+  const errorEl = document.getElementById('login-error');
+  if (errorEl) {
+    errorEl.textContent = msg;
+    errorEl.classList.remove('hidden');
+  }
 }
