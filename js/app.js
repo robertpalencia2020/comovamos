@@ -29,6 +29,7 @@ function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const pinBtn = document.getElementById('pin-sidebar-btn');
   const toggleBtn = document.getElementById('toggle-sidebar-btn');
+  const overlay = document.getElementById('sidebar-overlay');
 
   // Cargar estado de fijado
   const isPinned = localStorage.getItem('sidebar_pinned') === 'true';
@@ -39,14 +40,40 @@ function initSidebar() {
     localStorage.setItem('sidebar_pinned', sidebar.classList.contains('pinned'));
   });
 
-  toggleBtn.addEventListener('click', () => {
+  toggleBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
     if (window.innerWidth <= 768) {
       sidebar.classList.toggle('mobile-open');
+      if (overlay) overlay.classList.toggle('active', sidebar.classList.contains('mobile-open'));
     } else {
       sidebar.classList.toggle('pinned');
       localStorage.setItem('sidebar_pinned', sidebar.classList.contains('pinned'));
     }
   });
+
+  // Cerrar al tocar la capa overlay en móvil
+  if (overlay) {
+    overlay.addEventListener('click', () => {
+      closeMobileSidebar();
+    });
+  }
+
+  // Cierre por seguridad si se toca cualquier otro punto fuera del sidebar
+  document.addEventListener('click', (e) => {
+    if (window.innerWidth <= 768 && sidebar.classList.contains('mobile-open')) {
+      if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
+        closeMobileSidebar();
+      }
+    }
+  });
+}
+
+function closeMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('sidebar-overlay');
+  
+  if (sidebar) sidebar.classList.remove('mobile-open');
+  if (overlay) overlay.classList.remove('active');
 }
 
 // Enrutador de Vistas (SPA)
@@ -87,9 +114,9 @@ function switchView(viewName) {
   };
   document.getElementById('page-title').textContent = titles[viewName] || 'Comovamos';
 
-  // Si está en móvil, cerrar menú al seleccionar
+  // Si está en móvil, cerrar menú y remover overlay al seleccionar vista
   if (window.innerWidth <= 768) {
-    document.getElementById('sidebar').classList.remove('mobile-open');
+    closeMobileSidebar();
   }
 }
 

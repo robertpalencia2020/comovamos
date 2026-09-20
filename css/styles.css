@@ -80,7 +80,6 @@ body {
   color: var(--color-primary);
 }
 
-/* Estilo para SVG vectorial de marca */
 .brand-icon-svg {
   width: 2rem;
   height: 2rem;
@@ -175,8 +174,28 @@ body {
 }
 
 /* =========================================================================
-   LAYOUT PRINCIPAL Y SIDEBAR (FIX DE ALTURA Y SCROLL MÓVIL)
+   OVERLAY Y SIDEBAR MÓVIL
    ========================================================================= */
+.sidebar-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  background-color: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 900;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.sidebar-overlay.active {
+  opacity: 1;
+  visibility: visible;
+}
+
 #app-screen {
   display: flex;
   width: 100vw;
@@ -222,7 +241,6 @@ body {
   transition: opacity 0.2s ease;
 }
 
-/* Scroll independiente para los links principales si la pantalla es corta */
 .sidebar-menu {
   display: flex;
   flex-direction: column;
@@ -230,7 +248,7 @@ body {
   padding: 1rem 0.75rem;
   flex-grow: 1;
   overflow-y: auto;
-  min-height: 0; 
+  min-height: 0;
 }
 
 .nav-item {
@@ -268,7 +286,6 @@ body {
   text-overflow: ellipsis;
 }
 
-/* El pie del sidebar siempre fijo abajo */
 .sidebar-footer {
   padding: 1rem 0.75rem;
   border-top: 1px solid var(--border-color);
@@ -325,6 +342,10 @@ body {
   .sidebar:not(.pinned):hover .link-text {
     opacity: 1;
     visibility: visible;
+  }
+
+  .sidebar-overlay {
+    display: none !important;
   }
 }
 
