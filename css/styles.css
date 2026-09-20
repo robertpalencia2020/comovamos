@@ -57,6 +57,7 @@ body {
   background-color: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
+  min-height: 100dvh;
   overflow-x: hidden;
 }
 
@@ -79,12 +80,21 @@ body {
   color: var(--color-primary);
 }
 
+/* Estilo para SVG vectorial de marca */
+.brand-icon-svg {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  fill: var(--color-primary);
+}
+
 /* =========================================================================
    PANTALLA DE LOGIN
    ========================================================================= */
 .screen-container {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 #login-screen {
@@ -109,13 +119,9 @@ body {
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   color: var(--color-primary);
   margin-bottom: 0.25rem;
-}
-
-.brand-header .brand-icon {
-  font-size: 2.2rem;
 }
 
 .brand-header h1 {
@@ -169,12 +175,13 @@ body {
 }
 
 /* =========================================================================
-   LAYOUT PRINCIPAL Y SIDEBAR (OVERLAY Y FIJADO)
+   LAYOUT PRINCIPAL Y SIDEBAR (FIX DE ALTURA Y SCROLL MÓVIL)
    ========================================================================= */
 #app-screen {
   display: flex;
   width: 100vw;
   min-height: 100vh;
+  min-height: 100dvh;
   position: relative;
 }
 
@@ -185,9 +192,10 @@ body {
   flex-direction: column;
   justify-content: space-between;
   white-space: nowrap;
-  overflow: hidden;
   flex-shrink: 0;
   height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
 }
 
 .sidebar-header {
@@ -197,6 +205,7 @@ body {
   justify-content: space-between;
   padding: 0 1.25rem;
   border-bottom: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .brand-logo {
@@ -213,12 +222,15 @@ body {
   transition: opacity 0.2s ease;
 }
 
+/* Scroll independiente para los links principales si la pantalla es corta */
 .sidebar-menu {
   display: flex;
   flex-direction: column;
   gap: 0.25rem;
   padding: 1rem 0.75rem;
   flex-grow: 1;
+  overflow-y: auto;
+  min-height: 0; 
 }
 
 .nav-item {
@@ -232,6 +244,7 @@ body {
   font-weight: 500;
   font-size: 0.95rem;
   transition: var(--transition);
+  flex-shrink: 0;
 }
 
 .nav-item .material-symbols-outlined {
@@ -255,9 +268,11 @@ body {
   text-overflow: ellipsis;
 }
 
+/* El pie del sidebar siempre fijo abajo */
 .sidebar-footer {
   padding: 1rem 0.75rem;
   border-top: 1px solid var(--border-color);
+  flex-shrink: 0;
 }
 
 .btn-logout {
@@ -275,7 +290,6 @@ body {
     transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.25s ease;
   }
 
-  /* Desplegar como Overlay al pasar el cursor si NO está fijado */
   .sidebar:not(.pinned):hover {
     position: absolute;
     top: 0;
@@ -286,7 +300,6 @@ body {
     z-index: 200;
   }
 
-  /* Estado Fijado */
   .sidebar.pinned {
     width: var(--sidebar-width-expanded);
     position: relative;
@@ -299,7 +312,6 @@ body {
     transform: rotate(-45deg);
   }
 
-  /* Control estricto de visibilidad del texto */
   .sidebar:not(.pinned):not(:hover) .brand-name,
   .sidebar:not(.pinned):not(:hover) .link-text {
     opacity: 0;
