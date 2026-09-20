@@ -61,6 +61,12 @@ body {
   overflow-x: hidden;
 }
 
+html, body {
+  touch-action: manipulation; /* Deshabilita gestos de zoom multinivel y doble tap */
+  -webkit-text-size-adjust: 100%; /* Evita que el navegador ajuste automáticamente el tamaño del texto */
+  overscroll-behavior-y: none; /* Previene el efecto de rebote elástico en móviles */
+}
+
 /* Clases Útiles */
 .hidden { display: none !important; }
 .icon-btn {

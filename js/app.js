@@ -3,6 +3,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initSidebar();
   initNavigation();
   checkInitialView();
+  preventMobileZoom(); // <-- Inicializar prevención de zoom
 });
 
 // Control de Tema (Claro / Oscuro) con SVG limpio
@@ -118,4 +119,30 @@ function checkInitialView() {
   const isMobile = window.innerWidth <= 768;
   const defaultView = isMobile ? 'agenda' : 'dashboard';
   switchView(defaultView);
+}
+
+// Bloquear gestos de zoom multinivel (pinch-to-zoom) y doble tap en iOS/Safari
+function preventMobileZoom() {
+  // Bloquear el gesto de pinza/pellizco (Pinch-to-zoom)
+  document.addEventListener('gesturestart', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('gesturechange', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  document.addEventListener('gestureend', (e) => {
+    e.preventDefault();
+  }, { passive: false });
+
+  // Prevenir zoom por doble toque rápido en pantalla
+  let lastTouchEnd = 0;
+  document.addEventListener('touchend', (e) => {
+    const now = (new Date()).getTime();
+    if (now - lastTouchEnd <= 300) {
+      e.preventDefault();
+    }
+    lastTouchEnd = now;
+  }, false);
 }
