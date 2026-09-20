@@ -142,12 +142,12 @@
       </header>
 
       <!-- VISTAS DINÁMICAS -->
-      <main id="content-area" class="content-area">
+      <main id="content-area" class="content-area scrollable-area">
         
-        <!-- Vista Dashboard -->
+        <!-- Vista Dashboard con KPIs Clickables -->
         <section id="view-dashboard" class="view-pane">
           <div class="kpi-grid">
-            <div class="kpi-card">
+            <div class="kpi-card kpi-card-clickable" id="kpi-card-projects">
               <svg class="kpi-icon-svg primary" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M20 6h-8l-2-2H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm0 12H4V8h16v10z"/>
               </svg>
@@ -156,7 +156,7 @@
                 <span class="kpi-label">Proyectos activos</span>
               </div>
             </div>
-            <div class="kpi-card">
+            <div class="kpi-card kpi-card-clickable" id="kpi-card-pending">
               <svg class="kpi-icon-svg warning" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67z"/>
               </svg>
@@ -165,7 +165,7 @@
                 <span class="kpi-label">Tareas en curso</span>
               </div>
             </div>
-            <div class="kpi-card">
+            <div class="kpi-card kpi-card-clickable" id="kpi-card-overdue">
               <svg class="kpi-icon-svg danger blink" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
               </svg>
@@ -183,48 +183,107 @@
             <div class="search-box">
               <input type="text" id="project-search-input" placeholder="Buscar proyecto..." />
             </div>
+            
             <div class="projects-filters">
               <button class="filter-btn active" data-proj-filter="todos">Todos</button>
               <button class="filter-btn" data-proj-filter="en_curso">En curso</button>
               <button class="filter-btn" data-proj-filter="completado">Completados</button>
             </div>
+
+            <div class="view-toggle-group">
+              <button id="view-grid-btn" class="toggle-icon-btn active" title="Vista tarjetas">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 11h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zM4 21h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1zm10 0h6a1 1 0 0 0 1-1v-6a1 1 0 0 0-1-1h-6a1 1 0 0 0-1 1v6a1 1 0 0 0 1 1z"/>
+                </svg>
+              </button>
+              <button id="view-list-btn" class="toggle-icon-btn" title="Vista lista">
+                <svg class="icon-svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M4 10.5c-.83 0-1.5.67-1.5 1.5s.67 1.5 1.5 1.5 1.5-.67 1.5-1.5-.67-1.5-1.5-1.5zm0-6c-.83 0-1.5.67-1.5 1.5S3.17 7.5 4 7.5 5.5 6.83 5.5 6s-.67-1.5-1.5-1.5zm0 12c-.83 0-1.5.68-1.5 1.5s.68 1.5 1.5 1.5 1.5-.68 1.5-1.5-.67-1.5-1.5-1.5zM7 19h14v-2H7v2zm0-6h14v-2H7v2zm0-8v2h14V5H7z"/>
+                </svg>
+              </button>
+            </div>
+
             <button id="open-project-modal-btn" class="btn-add-task">+ Nuevo proyecto</button>
           </div>
 
-          <!-- Contenedor dinámico de proyectos -->
-          <div id="projects-grid" class="projects-grid"></div>
+          <div id="projects-grid-wrapper" class="projects-grid-wrapper scrollable-area">
+            <div id="projects-grid" class="projects-grid"></div>
+          </div>
         </section>
 
-        <!-- Vista Seguimiento (Agenda Diaria) -->
+        <!-- Vista Seguimiento (Rediseñada con Barra Unificada) -->
         <section id="view-agenda" class="view-pane hidden">
           <div class="agenda-header">
             <h3>Seguimiento de hoy</h3>
             <span id="current-date-label" class="date-label"></span>
           </div>
 
-          <form id="add-task-form" class="quick-add-task">
-            <input type="text" id="task-input-title" placeholder="Escribe una nueva tarea de seguimiento..." required />
-            <select id="task-input-priority">
-              <option value="baja">Baja</option>
-              <option value="media" selected>Media</option>
-              <option value="alta">Alta</option>
-            </select>
-            <button type="submit" class="btn-add-task">+ Agregar</button>
-          </form>
-
-          <div class="task-filters">
-            <button class="filter-btn active" data-filter="todas">Todas</button>
-            <button class="filter-btn" data-filter="pendientes">Pendientes</button>
-            <button class="filter-btn" data-filter="completadas">Completadas</button>
+          <div class="agenda-toolbar-row">
+            <div class="task-filters">
+              <button class="filter-btn active" data-filter="todas">Todas</button>
+              <button class="filter-btn" data-filter="pendientes">Pendientes</button>
+              <button class="filter-btn" data-filter="completadas">Completadas</button>
+            </div>
+            
+            <button id="open-agenda-task-modal-btn" class="btn-add-task">+ Agregar tarea</button>
           </div>
 
-          <div id="daily-tasks-list" class="tasks-container"></div>
+          <div id="daily-tasks-list" class="tasks-container scrollable-area" style="margin-top: 1rem;"></div>
         </section>
 
-        <!-- Contenedores restantes -->
-        <section id="view-calendar" class="view-pane hidden"></section>
-        <section id="view-reports" class="view-pane hidden"></section>
-        <section id="view-settings" class="view-pane hidden"></section>
+        <!-- Vista Calendario de actividades -->
+        <section id="view-calendar" class="view-pane hidden">
+          <div class="calendar-wrapper">
+            <div class="calendar-header-bar">
+              <button id="cal-prev-btn" class="filter-btn">&lt; Anterior</button>
+              <h3 id="calendar-month-label" class="calendar-month-title">Septiembre 2026</h3>
+              <button id="cal-next-btn" class="filter-btn">Siguiente &gt;</button>
+            </div>
+
+            <div class="calendar-weekdays">
+              <span>Lun</span><span>Mar</span><span>Mié</span><span>Jue</span><span>Vie</span><span>Sáb</span><span>Dom</span>
+            </div>
+
+            <div id="calendar-days-grid" class="calendar-days-grid"></div>
+
+            <div class="calendar-day-details">
+              <h4 id="selected-day-title">Actividades agendadas</h4>
+              <div id="selected-day-events" class="tasks-container scrollable-area"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Vista Reportes -->
+        <section id="view-reports" class="view-pane hidden">
+          <div class="reports-container">
+            <div class="reports-summary-cards">
+              <div class="report-card">
+                <span class="report-card-title">Tasa de cumplimiento</span>
+                <span class="report-card-value" id="rep-completion-rate">0%</span>
+                <span class="report-card-sub">Tareas finalizadas a tiempo</span>
+              </div>
+              <div class="report-card">
+                <span class="report-card-title">Promedio de avance</span>
+                <span class="report-card-value" id="rep-avg-progress">0%</span>
+                <span class="report-card-sub">En proyectos activos</span>
+              </div>
+            </div>
+
+            <div class="report-section">
+              <h4>Estado de avance por proyecto</h4>
+              <div id="reports-projects-list" class="reports-projects-list scrollable-area"></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Vista Configuración -->
+        <section id="view-settings" class="view-pane hidden">
+          <div class="settings-card">
+            <h4>Preferencias del sistema</h4>
+            <p style="color: var(--text-muted); margin-top: 0.5rem;">Gestión de parámetros globales de Comovamos.</p>
+          </div>
+        </section>
+
       </main>
 
     </div>
@@ -242,25 +301,309 @@
           <label for="proj-name">Nombre del proyecto</label>
           <input type="text" id="proj-name" placeholder="Ej: Rediseño de banca en línea" required />
         </div>
+        
         <div class="form-group">
           <label for="proj-category">Categoría</label>
-          <input type="text" id="proj-category" placeholder="Ej: Canales digitales" required />
+          <select id="proj-category" required>
+            <option value="" disabled selected>Seleccione una categoría</option>
+            <option value="Canales Electrónicos">Canales Electrónicos</option>
+            <option value="Experiencia Digital">Experiencia Digital</option>
+            <option value="Innovación">Innovación</option>
+            <option value="Infraestructura Tecnológica">Infraestructura Tecnológica</option>
+          </select>
         </div>
+
+        <div class="form-group">
+          <label for="proj-owner">Líder responsable</label>
+          <select id="proj-owner" required>
+            <option value="" disabled selected>Cargando usuarios...</option>
+          </select>
+        </div>
+
         <div class="form-row">
           <div class="form-group">
-            <label for="proj-start-date">Fecha de inicio</label>
+            <label for="proj-start-date">Fecha inicio (Línea base)</label>
             <input type="date" id="proj-start-date" required />
           </div>
           <div class="form-group">
-            <label for="proj-end-date">Fecha estimada de fin</label>
+            <label for="proj-end-date">Fecha fin (Línea base)</label>
             <input type="date" id="proj-end-date" required />
           </div>
         </div>
+
         <div class="modal-actions">
           <button type="button" id="cancel-project-modal-btn" class="filter-btn">Cancelar</button>
-          <button type="submit" class="btn-add-task">Crear proyecto</button>
+          <button type="submit" class="btn-add-task">Crear</button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE INCLUSIÓN / EDICIÓN DE TAREA CON DESCRIPCIÓN -->
+  <div id="agenda-task-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 id="agenda-task-modal-title">Agregar tarea</h3>
+        <button id="close-agenda-task-modal-btn" class="icon-btn">✕</button>
+      </div>
+      <form id="agenda-task-form" class="modal-form">
+        <input type="hidden" id="agenda-task-id" />
+
+        <div class="form-group">
+          <label for="agenda-task-title">Nombre de la tarea</label>
+          <input type="text" id="agenda-task-title" placeholder="Ej: Revisar informe de riesgos" required />
+        </div>
+
+        <div class="form-group">
+          <label for="agenda-task-desc">Descripción / Observaciones</label>
+          <textarea id="agenda-task-desc" rows="3" placeholder="Ingresa los detalles o especificaciones de la tarea..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="agenda-task-project">Proyecto asociado</label>
+          <select id="agenda-task-project">
+            <option value="personal">👤 Tarea personal / Suelta (Calendario personal)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="agenda-task-priority">Prioridad</label>
+            <select id="agenda-task-priority">
+              <option value="baja">Baja</option>
+              <option value="media" selected>Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="agenda-task-status">Estado</label>
+            <select id="agenda-task-status">
+              <option value="pendiente">Pendiente</option>
+              <option value="completado">Completado</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-row">
+          <div class="form-group">
+            <label for="agenda-task-start-date">Fecha de inicio</label>
+            <input type="date" id="agenda-task-start-date" required />
+          </div>
+          <div class="form-group">
+            <label for="agenda-task-end-date">Fecha de fin</label>
+            <input type="date" id="agenda-task-end-date" required />
+          </div>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-agenda-task-modal-btn" class="filter-btn">Cancelar</button>
+          <button type="submit" class="btn-add-task">Guardar Tarea</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE DATA-ENTRY DETALLADO DE PROYECTO -->
+  <div id="project-detail-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-large">
+      <div class="modal-header">
+        <div>
+          <h3 id="detail-proj-title">Detalles del Proyecto</h3>
+          <span id="detail-proj-subtitle" class="project-category"></span>
+        </div>
+        <button id="close-project-detail-modal-btn" class="icon-btn">✕</button>
+      </div>
+
+      <div class="detail-tabs">
+        <button class="detail-tab-btn active" data-tab="tab-general">Información General</button>
+        <button class="detail-tab-btn" data-tab="tab-tasks">Tareas del Proyecto (<span id="detail-tasks-count">0</span>)</button>
+        <button class="detail-tab-btn" data-tab="tab-attachments">Adjuntos del Proyecto (<span id="detail-attachments-count">0</span>)</button>
+      </div>
+
+      <div class="detail-tab-content scrollable-area">
+        <div id="tab-general" class="tab-pane active">
+          <form id="edit-project-details-form" class="modal-form">
+            <input type="hidden" id="detail-proj-id" />
+            
+            <div class="form-group">
+              <label for="detail-proj-name">Nombre del Proyecto</label>
+              <input type="text" id="detail-proj-name" required />
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="detail-proj-category">Categoría</label>
+                <select id="detail-proj-category" required></select>
+              </div>
+              <div class="form-group">
+                <label for="detail-proj-owner">Líder responsable</label>
+                <select id="detail-proj-owner" required></select>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label for="detail-proj-status">Estado del Proyecto</label>
+                <select id="detail-proj-status" required>
+                  <option value="en_curso">En curso</option>
+                  <option value="completado">Completado</option>
+                  <option value="pausado">Pausado</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Porcentaje de Avance (Calculado)</label>
+                <div id="detail-proj-progress-badge" class="calc-progress-badge">0%</div>
+              </div>
+            </div>
+
+            <div class="baseline-box">
+              <div class="baseline-header">
+                <span class="baseline-title">🔒 Línea Base Registrada</span>
+                <button type="button" id="request-baseline-auth-btn" class="btn-link-action">Solicitar modificación</button>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="detail-proj-start-date">Fecha inicio (Línea base)</label>
+                  <input type="date" id="detail-proj-start-date" readonly disabled class="input-locked" />
+                </div>
+                <div class="form-group">
+                  <label for="detail-proj-baseline-end-date">Fecha fin (Línea base)</label>
+                  <input type="date" id="detail-proj-baseline-end-date" readonly disabled class="input-locked" />
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="detail-proj-end-date">Fecha estimada de fin (Calculada según tareas)</label>
+              <input type="date" id="detail-proj-end-date" readonly disabled class="input-calc-highlight" />
+            </div>
+
+            <div class="form-group">
+              <label for="detail-proj-desc">Descripción / Alcance</label>
+              <textarea id="detail-proj-desc" rows="3" placeholder="Añade observaciones generales o el alcance del proyecto..."></textarea>
+            </div>
+
+            <div class="modal-actions">
+              <button type="submit" class="btn-add-task">Guardar Cambios</button>
+            </div>
+          </form>
+        </div>
+
+        <div id="tab-tasks" class="tab-pane hidden">
+          <form id="add-proj-task-form" class="task-form-container">
+            <div class="form-group">
+              <label for="proj-task-title">Nombre de la tarea</label>
+              <input type="text" id="proj-task-title" placeholder="Ej: Pruebas de integración API" required />
+            </div>
+
+            <div class="form-group">
+              <label for="proj-task-desc">Descripción de la tarea</label>
+              <textarea id="proj-task-desc" rows="2" placeholder="Detalles o requerimientos técnicos de la tarea..."></textarea>
+            </div>
+
+            <div class="form-row trio-row">
+              <div class="form-group">
+                <label for="proj-task-priority">Prioridad</label>
+                <select id="proj-task-priority">
+                  <option value="baja">Baja</option>
+                  <option value="media" selected>Media</option>
+                  <option value="alta">Alta</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="proj-task-start-date">Fecha de inicio</label>
+                <input type="date" id="proj-task-start-date" required />
+              </div>
+              <div class="form-group">
+                <label for="proj-task-end-date">Fecha de fin</label>
+                <input type="date" id="proj-task-end-date" required />
+              </div>
+            </div>
+
+            <div class="form-row attachment-action-row">
+              <div class="form-group">
+                <label for="proj-task-file">Adjunto de la tarea (Opcional)</label>
+                <input type="file" id="proj-task-file" class="file-input-compact" />
+              </div>
+              <div class="form-group btn-align-bottom">
+                <button type="submit" class="btn-add-task">+ Añadir Tarea</button>
+              </div>
+            </div>
+          </form>
+
+          <div id="proj-detail-tasks-list" class="tasks-container task-scroll-area scrollable-area"></div>
+        </div>
+
+        <div id="tab-attachments" class="tab-pane hidden">
+          <div class="attachment-upload-box">
+            <input type="file" id="proj-attachment-file" class="hidden" />
+            <button type="button" id="trigger-file-upload-btn" class="filter-btn">+ Cargar Archivo Adjunto</button>
+            <span class="text-muted" style="font-size: 0.8rem; margin-left: 0.5rem;">Soporta PDF, DOCX, XLSX, PNG (Máx 10MB)</span>
+          </div>
+
+          <div id="proj-attachments-list" class="attachments-list task-scroll-area scrollable-area"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL DE AUTORIZACIÓN DE LÍNEA BASE -->
+  <div id="baseline-auth-modal" class="modal-overlay hidden">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>🔒 Autorización de Línea Base</h3>
+        <button id="close-baseline-auth-btn" class="icon-btn">✕</button>
+      </div>
+      <form id="baseline-auth-form" class="modal-form">
+        <p style="font-size: 0.85rem; color: var(--text-muted);">
+          La línea base del proyecto fue establecida en su creación. Ingrese la justificación y clave de autorización para modificarla.
+        </p>
+
+        <div class="form-group">
+          <label for="auth-reason">Justificación de cambio</label>
+          <textarea id="auth-reason" rows="2" placeholder="Describa la causa del ajuste..." required></textarea>
+        </div>
+
+        <div class="form-group">
+          <label for="auth-code">Código de Autorización PMO / Admin</label>
+          <input type="password" id="auth-code" placeholder="Ingrese clave de autorización" required />
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" id="cancel-baseline-auth-btn" class="filter-btn">Cancelar</button>
+          <button type="submit" class="btn-add-task">Autorizar y Desbloquear</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- MODAL DE NOTIFICACIÓN DE ADVERTENCIA / VALIDACIÓN -->
+  <div id="custom-alert-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-alert">
+      <div class="modal-header">
+        <h3 id="custom-alert-title">⚠️ Atención</h3>
+        <button id="close-custom-alert-btn" class="icon-btn">✕</button>
+      </div>
+      <p id="custom-alert-message" class="alert-modal-text"></p>
+      <div class="modal-actions">
+        <button type="button" id="ok-custom-alert-btn" class="btn-add-task">Entendido</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN DE TAREA -->
+  <div id="confirm-delete-modal" class="modal-overlay hidden">
+    <div class="modal-card modal-card-alert">
+      <div class="modal-header">
+        <h3>🗑️ Confirmar eliminación</h3>
+        <button id="close-confirm-delete-btn" class="icon-btn">✕</button>
+      </div>
+      <p id="confirm-delete-message" class="alert-modal-text"></p>
+      <div class="modal-actions">
+        <button type="button" id="cancel-confirm-delete-btn" class="filter-btn">Cancelar</button>
+        <button type="button" id="accept-confirm-delete-btn" class="btn-add-task btn-danger">Eliminar</button>
+      </div>
     </div>
   </div>
 
