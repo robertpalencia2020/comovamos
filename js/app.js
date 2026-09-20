@@ -7,6 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
   checkInitialView();
   preventMobileZoom();
   initTasksModule();
+  initProjectsModule();
 });
 
 // Control de Tema (Claro / Oscuro) con SVG limpio
@@ -207,21 +208,24 @@ function renderDailyAgenda(filter = 'todas') {
     return;
   }
 
-  container.innerHTML = tasks.map(task => `
-    <div class="task-card ${task.overdue ? 'overdue' : ''}" data-id="${task.id}">
-      <div class="task-checkbox ${task.status === 'completado' ? 'checked' : ''}" onclick="toggleTaskStatus('${task.id}')">
-        ${task.status === 'completado' ? '✓' : ''}
-      </div>
-      <div class="task-details">
-        <span class="task-title ${task.status === 'completado' ? 'completed' : ''}">${task.title}</span>
-        <div class="task-meta">
-          <span class="task-badge priority-${task.priority}">Prioridad ${task.priority}</span>
-          ${task.overdue ? '<span class="task-badge overdue-badge">Vencida</span>' : ''}
+  container.innerHTML = tasks.map(task => {
+    const isOverdueAndActive = task.overdue && task.status !== 'completado';
+    return `
+      <div class="task-card ${isOverdueAndActive ? 'overdue' : ''}" data-id="${task.id}">
+        <div class="task-checkbox ${task.status === 'completado' ? 'checked' : ''}" onclick="toggleTaskStatus('${task.id}')">
+          ${task.status === 'completado' ? '✓' : ''}
         </div>
+        <div class="task-details">
+          <span class="task-title ${task.status === 'completado' ? 'completed' : ''}">${task.title}</span>
+          <div class="task-meta">
+            <span class="task-badge priority-${task.priority}">Prioridad ${task.priority}</span>
+            ${isOverdueAndActive ? '<span class="task-badge overdue-badge">Vencida</span>' : ''}
+          </div>
+        </div>
+        <button class="task-delete-btn" onclick="deleteTask('${task.id}')" title="Eliminar tarea">✕</button>
       </div>
-      <button class="task-delete-btn" onclick="deleteTask('${task.id}')" title="Eliminar tarea">✕</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function toggleTaskStatus(taskId) {
@@ -271,7 +275,6 @@ function deleteTask(taskId) {
 function setupTaskEvents() {
   const taskForm = document.getElementById('add-task-form');
   if (taskForm) {
-    // Evitar acumulaciones de event listener
     taskForm.onsubmit = (e) => {
       e.preventDefault();
       const input = document.getElementById('task-input-title');
@@ -283,13 +286,160 @@ function setupTaskEvents() {
     };
   }
 
-  const filterBtns = document.querySelectorAll('.filter-btn');
+  const filterBtns = document.querySelectorAll('.task-filters .filter-btn');
   filterBtns.forEach(btn => {
     btn.onclick = (e) => {
       filterBtns.forEach(b => b.classList.remove('active'));
       e.target.classList.add('active');
       const filter = e.target.getAttribute('data-filter') || 'todas';
       renderDailyAgenda(filter);
+    };
+  });
+}
+
+// =========================================================================
+// MÓDULO DE PROYECTOS
+// =========================================================================
+
+function initProjectsModule() {
+  renderProjectsList();
+  setupProjectsEvents();
+}
+
+function renderProjectsList(filter = 'todos', searchTerm = '') {
+  const grid = document.getElementById('projects-grid');
+  if (!grid) return;
+
+  let projects = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECTS) || '[]');
+
+  // Filtrado por estado
+  if (filter !== 'todos') {
+    projects = projects.filter(p => p.status === filter);
+  }
+
+  // Búsqueda por nombre o categoría
+  if (searchTerm.trim() !== '') {
+    const term = searchTerm.toLowerCase();
+    projects = projects.filter(p => p.name.toLowerCase().includes(term) || p.category.toLowerCase().includes(term));
+  }
+
+  if (projects.length === 0) {
+    grid.innerHTML = `
+      <div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 2rem;">
+        <p>No se encontraron proyectos en esta sección.</p>
+      </div>
+    `;
+    return;
+  }
+
+  grid.innerHTML = projects.map(proj => {
+    const statusLabel = proj.status === 'en_curso' ? 'En curso' : (proj.status === 'completado' ? 'Completado' : 'Pausado');
+    return `
+      <div class="project-card" data-id="${proj.id}">
+        <div>
+          <div class="project-card-header">
+            <h4 class="project-title">${proj.name}</h4>
+            <span class="status-badge status-${proj.status}">${statusLabel}</span>
+          </div>
+          <span class="project-category">${proj.category}</span>
+        </div>
+
+        <div class="project-progress-wrapper">
+          <div class="progress-header">
+            <span>Avance</span>
+            <span>${proj.progress}%</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: ${proj.progress}%;"></div>
+          </div>
+        </div>
+
+        <div class="project-footer">
+          <span>Finaliza: ${proj.endDate}</span>
+          <button class="task-delete-btn" onclick="deleteProject('${proj.id}')" title="Eliminar proyecto">✕</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function deleteProject(projId) {
+  let projects = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECTS) || '[]');
+  projects = projects.filter(p => p.id !== projId);
+
+  localStorage.setItem(CONFIG.STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+  renderProjectsList();
+  renderDashboardKPIs();
+}
+
+function setupProjectsEvents() {
+  const openModalBtn = document.getElementById('open-project-modal-btn');
+  const closeModalBtn = document.getElementById('close-project-modal-btn');
+  const cancelModalBtn = document.getElementById('cancel-project-modal-btn');
+  const modal = document.getElementById('project-modal');
+  const form = document.getElementById('create-project-form');
+  const searchInput = document.getElementById('project-search-input');
+  const filterBtns = document.querySelectorAll('[data-proj-filter]');
+
+  // Modal handlers
+  if (openModalBtn && modal) {
+    openModalBtn.onclick = () => modal.classList.remove('hidden');
+  }
+
+  const closeModal = () => {
+    if (modal) modal.classList.add('hidden');
+    if (form) form.reset();
+  };
+
+  if (closeModalBtn) closeModalBtn.onclick = closeModal;
+  if (cancelModalBtn) cancelModalBtn.onclick = closeModal;
+
+  // Formulario nuevo proyecto
+  if (form) {
+    form.onsubmit = (e) => {
+      e.preventDefault();
+      const name = document.getElementById('proj-name').value;
+      const category = document.getElementById('proj-category').value;
+      const startDate = document.getElementById('proj-start-date').value;
+      const endDate = document.getElementById('proj-end-date').value;
+
+      const projects = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECTS) || '[]');
+      const newProj = {
+        id: 'proj-' + Date.now(),
+        name: name,
+        category: category,
+        status: 'en_curso',
+        progress: 0,
+        startDate: startDate,
+        endDate: endDate,
+        owner: 'Robert P.'
+      };
+
+      projects.unshift(newProj);
+      localStorage.setItem(CONFIG.STORAGE_KEYS.PROJECTS, JSON.stringify(projects));
+
+      renderProjectsList();
+      renderDashboardKPIs();
+      closeModal();
+    };
+  }
+
+  // Búsqueda en tiempo real
+  if (searchInput) {
+    searchInput.oninput = (e) => {
+      const activeFilter = document.querySelector('[data-proj-filter].active')?.getAttribute('data-proj-filter') || 'todos';
+      renderProjectsList(activeFilter, e.target.value);
+    };
+  }
+
+  // Filtros de estado de proyecto
+  filterBtns.forEach(btn => {
+    btn.onclick = (e) => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      e.target.classList.add('active');
+      const filter = e.target.getAttribute('data-proj-filter');
+      const searchTerm = searchInput ? searchInput.value : '';
+      renderProjectsList(filter, searchTerm);
     };
   });
 }
