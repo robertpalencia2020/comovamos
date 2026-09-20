@@ -5,14 +5,18 @@ document.addEventListener('DOMContentLoaded', () => {
   checkInitialView();
 });
 
-// Control de Tema (Claro / Oscuro)
+// Control de Tema (Claro / Oscuro) con SVG limpio
 function initTheme() {
   const themeBtn = document.getElementById('theme-toggle-btn');
   const themeIcon = document.getElementById('theme-icon');
   
+  // Trazado vectorial corregido y alineado para el modo oscuro (Luna)
+  const moonSvg = '<path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>';
+  const sunSvg = '<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>';
+
   const savedTheme = localStorage.getItem('theme') || 'light';
   document.documentElement.setAttribute('data-theme', savedTheme);
-  themeIcon.textContent = savedTheme === 'dark' ? 'light_mode' : 'dark_mode';
+  themeIcon.innerHTML = savedTheme === 'dark' ? sunSvg : moonSvg;
 
   themeBtn.addEventListener('click', () => {
     const currentTheme = document.documentElement.getAttribute('data-theme');
@@ -20,18 +24,16 @@ function initTheme() {
     
     document.documentElement.setAttribute('data-theme', newTheme);
     localStorage.setItem('theme', newTheme);
-    themeIcon.textContent = newTheme === 'dark' ? 'light_mode' : 'dark_mode';
+    themeIcon.innerHTML = newTheme === 'dark' ? sunSvg : moonSvg;
   });
 }
 
-// Control del Sidebar (Overlay vs Fixed)
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const pinBtn = document.getElementById('pin-sidebar-btn');
   const toggleBtn = document.getElementById('toggle-sidebar-btn');
   const overlay = document.getElementById('sidebar-overlay');
 
-  // Cargar estado de fijado
   const isPinned = localStorage.getItem('sidebar_pinned') === 'true';
   if (isPinned) sidebar.classList.add('pinned');
 
@@ -51,14 +53,12 @@ function initSidebar() {
     }
   });
 
-  // Cerrar al tocar la capa overlay en móvil
   if (overlay) {
     overlay.addEventListener('click', () => {
       closeMobileSidebar();
     });
   }
 
-  // Cierre por seguridad si se toca cualquier otro punto fuera del sidebar
   document.addEventListener('click', (e) => {
     if (window.innerWidth <= 768 && sidebar.classList.contains('mobile-open')) {
       if (!sidebar.contains(e.target) && !toggleBtn.contains(e.target)) {
@@ -76,7 +76,6 @@ function closeMobileSidebar() {
   if (overlay) overlay.classList.remove('active');
 }
 
-// Enrutador de Vistas (SPA)
 function initNavigation() {
   const navItems = document.querySelectorAll('.nav-item[data-view]');
   
@@ -90,37 +89,31 @@ function initNavigation() {
 }
 
 function switchView(viewName) {
-  // Ocultar todas las vistas
   document.querySelectorAll('.view-pane').forEach(pane => pane.classList.add('hidden'));
-  
-  // Desactivar items del menú
   document.querySelectorAll('.nav-item').forEach(nav => nav.classList.remove('active'));
 
-  // Mostrar vista seleccionada
   const activePane = document.getElementById(`view-${viewName}`);
   const activeNav = document.querySelector(`.nav-item[data-view="${viewName}"]`);
 
   if (activePane) activePane.classList.remove('hidden');
   if (activeNav) activeNav.classList.add('active');
 
-  // Actualizar título de navbar con capitalización correcta
+  // Diccionario de títulos actualizado
   const titles = {
     dashboard: 'Dashboard',
     projects: 'Proyectos',
     agenda: 'Seguimiento',
     calendar: 'Calendario',
     reports: 'Reportes',
-    settings: 'Configuración del sistema'
+    settings: 'Configuración'
   };
   document.getElementById('page-title').textContent = titles[viewName] || 'Comovamos';
 
-  // Si está en móvil, cerrar menú y remover overlay al seleccionar vista
   if (window.innerWidth <= 768) {
     closeMobileSidebar();
   }
 }
 
-// Determina la vista de inicio según el tipo de dispositivo
 function checkInitialView() {
   const isMobile = window.innerWidth <= 768;
   const defaultView = isMobile ? 'agenda' : 'dashboard';

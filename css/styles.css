@@ -80,11 +80,43 @@ body {
   color: var(--color-primary);
 }
 
+/* Estilos de Íconos SVG vectoriales */
 .brand-icon-svg {
   width: 2rem;
   height: 2rem;
   flex-shrink: 0;
   fill: var(--color-primary);
+}
+
+.icon-svg {
+  width: 1.4rem;
+  height: 1.4rem;
+  flex-shrink: 0;
+  fill: currentColor;
+  transition: transform 0.2s ease;
+}
+
+.kpi-icon-svg {
+  width: 2rem;
+  height: 2rem;
+  padding: 0.75rem;
+  border-radius: var(--radius-sm);
+  box-sizing: content-box;
+}
+
+.kpi-icon-svg.primary {
+  background-color: var(--color-primary-light);
+  fill: var(--color-primary);
+}
+
+.kpi-icon-svg.warning {
+  background-color: rgba(245, 158, 11, 0.1);
+  fill: var(--color-warning);
+}
+
+.kpi-icon-svg.danger {
+  background-color: rgba(239, 68, 68, 0.1);
+  fill: var(--color-danger);
 }
 
 /* =========================================================================
@@ -265,11 +297,6 @@ body {
   flex-shrink: 0;
 }
 
-.nav-item .material-symbols-outlined {
-  font-size: 1.4rem;
-  flex-shrink: 0;
-}
-
 .nav-item:hover {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
@@ -324,7 +351,7 @@ body {
     z-index: 100;
   }
 
-  .sidebar.pinned #pin-sidebar-btn {
+  .sidebar.pinned #pin-sidebar-btn .icon-svg {
     color: var(--color-primary);
     transform: rotate(-45deg);
   }
@@ -468,27 +495,6 @@ body {
   align-items: center;
   gap: 1rem;
   box-shadow: var(--shadow-sm);
-}
-
-.kpi-icon {
-  font-size: 2rem;
-  padding: 0.75rem;
-  border-radius: var(--radius-sm);
-}
-
-.kpi-icon.primary {
-  background-color: var(--color-primary-light);
-  color: var(--color-primary);
-}
-
-.kpi-icon.warning {
-  background-color: rgba(245, 158, 11, 0.1);
-  color: var(--color-warning);
-}
-
-.kpi-icon.danger {
-  background-color: rgba(239, 68, 68, 0.1);
-  color: var(--color-danger);
 }
 
 .kpi-value {
