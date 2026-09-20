@@ -81,7 +81,7 @@ function switchView(viewName) {
     dashboard: 'Dashboard',
     projects: 'Proyectos',
     agenda: 'Seguimiento',
-    calendar: 'Calendario de actividades',
+    calendar: 'Calendario',
     reports: 'Reportes',
     settings: 'Configuración del sistema'
   };
