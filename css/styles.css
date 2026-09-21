@@ -1,18 +1,18 @@
 /* =========================================================================
-   VARIABLES DE DISEÑO Y TEMAS
+   1. VARIABLES DE DISEÑO Y TEMAS
    ========================================================================= */
 :root {
   --color-primary: #FD1843;
   --color-primary-hover: #D90F35;
   --color-primary-light: rgba(253, 24, 67, 0.1);
   
-  --bg-main: #F8FAFC;
+  --bg-main: #EEF2F6;
   --bg-surface: #FFFFFF;
   --bg-sidebar: #FFFFFF;
   
   --text-main: #0F172A;
   --text-muted: #64748B;
-  --border-color: #E2E8F0;
+  --border-color: #CBD5E1;
   
   --color-warning: #F59E0B;
   --color-danger: #EF4444;
@@ -26,15 +26,15 @@
   --radius-md: 12px;
   --radius-lg: 16px;
 
-  --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
-  --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.12);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.15);
   --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 [data-theme="dark"] {
   color-scheme: dark;
-  --bg-main: #0F172A;
+  --bg-main: #0B1120;
   --bg-surface: #1E293B;
   --bg-sidebar: #1E293B;
   
@@ -44,7 +44,7 @@
 }
 
 /* =========================================================================
-   RESET Y SCROLL HABILITADO EN TODO EL SISTEMA
+   2. RESET GENERAL Y SCROLL
    ========================================================================= */
 * {
   box-sizing: border-box;
@@ -54,7 +54,8 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-html, body {
+html,
+body {
   background-color: var(--bg-main);
   color: var(--text-main);
   min-height: 100vh;
@@ -73,20 +74,16 @@ html, body {
   scroll-behavior: smooth;
 }
 
-/* FIX DEFINITIVO DEL ÍCONO DE CALENDARIO EN MODO OSCURO */
-[data-theme="dark"] input[type="date"] {
-  color-scheme: dark !important;
-  color: #F8FAFC !important;
-}
-
-[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(100) !important;
-  cursor: pointer;
-  opacity: 1 !important;
-}
-
-/* Form Inputs */
-select, input[type="text"], input[type="date"], input[type="number"], textarea, input[type="file"], input[type="password"] {
+/* =========================================================================
+   3. FORMULARIOS, INPUTS Y BUSCADOR CON BOTÓN "X"
+   ========================================================================= */
+select,
+input[type="text"],
+input[type="date"],
+input[type="number"],
+textarea,
+input[type="file"],
+input[type="password"] {
   width: 100%;
   max-width: 100%;
   box-sizing: border-box;
@@ -112,13 +109,53 @@ select {
   white-space: nowrap;
 }
 
-[data-theme="dark"] select {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%2394A3B8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+input[type="date"]::-webkit-calendar-picker-indicator {
+  cursor: pointer;
+  opacity: 0.6;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%2364748B'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: 1.25rem !important;
+  width: 1.25rem;
+  height: 1.25rem;
 }
 
-select:focus, input:focus, textarea:focus {
+[data-theme="dark"] select,
+[data-theme="dark"] input[type="date"]::-webkit-calendar-picker-indicator {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='%2394A3B8'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") !important;
+  filter: none !important;
+}
+
+select:focus,
+input:focus,
+textarea:focus {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+/* BUSCADOR CON BOTÓN "X" */
+.search-box {
+  position: relative;
+  flex-grow: 1;
+  min-width: 200px;
+}
+
+.clear-search-btn {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  padding: 4px;
+}
+
+.clear-search-btn:hover {
+  color: var(--color-primary);
 }
 
 .input-locked {
@@ -133,8 +170,13 @@ select:focus, input:focus, textarea:focus {
   color: var(--color-primary) !important;
 }
 
-/* Utility Classes */
-.hidden { display: none !important; }
+/* =========================================================================
+   4. CLASES DE UTILIDAD E ÍCONOS
+   ========================================================================= */
+.hidden {
+  display: none !important;
+}
+
 .icon-btn {
   background: none;
   border: none;
@@ -147,6 +189,7 @@ select:focus, input:focus, textarea:focus {
   justify-content: center;
   transition: var(--transition);
 }
+
 .icon-btn:hover {
   background-color: var(--color-primary-light);
   color: var(--color-primary);
@@ -190,9 +233,15 @@ select:focus, input:focus, textarea:focus {
 }
 
 @keyframes blink-animation {
-  0% { opacity: 1; }
-  50% { opacity: 0.3; }
-  100% { opacity: 1; }
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.3;
+  }
+  100% {
+    opacity: 1;
+  }
 }
 
 .blink {
@@ -206,74 +255,7 @@ select:focus, input:focus, textarea:focus {
 }
 
 /* =========================================================================
-   TOGGLE LISTADO vs CAJAS (REGLAS CSS CORREGIDAS)
-   ========================================================================= */
-.view-toggle-group {
-  display: flex;
-  gap: 0.25rem;
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-md);
-  padding: 4px;
-}
-
-.toggle-icon-btn {
-  background: transparent;
-  border: none;
-  color: var(--text-muted);
-  padding: 6px 10px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  transition: var(--transition);
-}
-
-.toggle-icon-btn:hover {
-  color: var(--color-primary);
-}
-
-.toggle-icon-btn.active {
-  background-color: var(--color-primary) !important;
-  color: #FFFFFF !important;
-  box-shadow: var(--shadow-sm);
-}
-
-.toggle-icon-btn.active .icon-svg {
-  fill: #FFFFFF !important;
-}
-
-/* MODO LISTADO DE PROYECTOS APLICADO VÍA CSS */
-.projects-grid.list-view {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 0.85rem !important;
-}
-
-.projects-grid.list-view .project-card {
-  display: grid !important;
-  grid-template-columns: 1fr 220px 180px !important;
-  align-items: center !important;
-  gap: 1.25rem !important;
-  padding: 1rem 1.25rem !important;
-}
-
-.projects-grid.list-view .project-card-header {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 0.25rem;
-}
-
-.projects-grid.list-view .project-footer {
-  border-top: none;
-  padding-top: 0;
-  justify-content: flex-end;
-  gap: 1.5rem;
-}
-
-/* =========================================================================
-   PANTALLA DE LOGIN Y DASHBOARD
+   5. LOGIN Y DASHBOARD
    ========================================================================= */
 .screen-container {
   width: 100%;
@@ -358,7 +340,23 @@ select:focus, input:focus, textarea:focus {
   text-align: center;
 }
 
-/* KPI CARDS CLICKABLES */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1.25rem;
+}
+
+.kpi-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  padding: 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+
 .kpi-card-clickable {
   cursor: pointer;
   transition: var(--transition);
@@ -370,8 +368,19 @@ select:focus, input:focus, textarea:focus {
   transform: translateY(-2px);
 }
 
+.kpi-value {
+  display: block;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.kpi-label {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 /* =========================================================================
-   SIDEBAR & NAVBAR
+   6. SIDEBAR, NAVBAR Y FOOTER VERSION
    ========================================================================= */
 .sidebar-overlay {
   position: fixed;
@@ -467,7 +476,7 @@ select:focus, input:focus, textarea:focus {
 }
 
 .sidebar-footer {
-  padding: 1rem 0.75rem;
+  padding: 0.75rem;
   border-top: 1px solid var(--border-color);
 }
 
@@ -476,6 +485,15 @@ select:focus, input:focus, textarea:focus {
   border: none;
   background: none;
   cursor: pointer;
+}
+
+.sidebar-version {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  opacity: 0.7;
+  padding: 0.5rem 0.85rem 0.25rem 0.85rem;
+  font-family: monospace;
+  text-align: center;
 }
 
 @media (min-width: 769px) {
@@ -500,7 +518,8 @@ select:focus, input:focus, textarea:focus {
   }
 
   .sidebar:not(.pinned):not(:hover) .brand-name,
-  .sidebar:not(.pinned):not(:hover) .link-text {
+  .sidebar:not(.pinned):not(:hover) .link-text,
+  .sidebar:not(.pinned):not(:hover) .sidebar-version {
     opacity: 0;
     visibility: hidden;
   }
@@ -591,36 +610,76 @@ select:focus, input:focus, textarea:focus {
   height: calc(100vh - var(--navbar-height));
 }
 
-.kpi-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1.25rem;
-}
-
-.kpi-card {
+/* =========================================================================
+   7. MODO LISTADO / CAJAS Y ADAPTACIÓN MÓVIL
+   ========================================================================= */
+.view-toggle-group {
+  display: flex;
+  gap: 0.25rem;
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-md);
-  padding: 1.25rem;
-  display: flex;
+  padding: 4px;
+}
+
+.toggle-icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: inline-flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  transition: var(--transition);
+}
+
+.toggle-icon-btn.active {
+  background-color: var(--color-primary) !important;
+  color: #FFFFFF !important;
   box-shadow: var(--shadow-sm);
 }
 
-.kpi-value {
-  display: block;
-  font-size: 1.5rem;
-  font-weight: 700;
+.toggle-icon-btn.active .icon-svg {
+  fill: #FFFFFF !important;
 }
 
-.kpi-label {
-  font-size: 0.85rem;
-  color: var(--text-muted);
+/* VISTA LISTA DE PROYECTOS EN ESCRITORIO */
+.projects-grid.list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 0.85rem !important;
+}
+
+.projects-grid.list-view .project-card {
+  display: grid !important;
+  grid-template-columns: 1fr 220px 180px !important;
+  align-items: center !important;
+  gap: 1.25rem !important;
+  padding: 1rem 1.25rem !important;
+}
+
+/* EN MÓVILES: OCULTAR TOGGLE Y MANTENER SOLO VISTA CAJAS */
+@media (max-width: 768px) {
+  .view-toggle-group {
+    display: none !important;
+  }
+  
+  .projects-grid,
+  .projects-grid.list-view {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+
+  .projects-grid.list-view .project-card {
+    display: flex !important;
+    flex-direction: column !important;
+  }
 }
 
 /* =========================================================================
-   SEGUIMIENTO Y TARJETAS DE TAREAS
+   8. SEGUIMIENTO Y TARJETAS DE TAREAS
    ========================================================================= */
 .agenda-header {
   margin-bottom: 1.25rem;
@@ -632,6 +691,20 @@ select:focus, input:focus, textarea:focus {
   justify-content: space-between;
   gap: 1rem;
   flex-wrap: wrap;
+}
+
+.agenda-date-range {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.agenda-date-range input[type="date"] {
+  padding: 0.35rem 0.6rem;
+  font-size: 0.85rem;
+  width: auto;
 }
 
 .btn-add-task {
@@ -770,9 +843,27 @@ select:focus, input:focus, textarea:focus {
   text-transform: capitalize;
 }
 
-.priority-alta { background-color: rgba(239, 68, 68, 0.1); color: var(--color-danger); }
-.priority-media { background-color: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
-.priority-baja { background-color: rgba(16, 185, 129, 0.1); color: var(--color-success); }
+.duration-badge {
+  background-color: var(--bg-main);
+  color: var(--text-muted);
+  border: 1px solid var(--border-color);
+  font-weight: 700;
+}
+
+.priority-alta {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: var(--color-danger);
+}
+
+.priority-media {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.priority-baja {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
 
 .task-actions {
   display: flex;
@@ -810,7 +901,141 @@ select:focus, input:focus, textarea:focus {
 }
 
 /* =========================================================================
-   MODAL DATA-ENTRY Y MODALES DE NOTIFICACIÓN
+   9. PROYECTOS, TARJETAS Y CONTENEDORES
+   ========================================================================= */
+.projects-actions-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.projects-filters {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.projects-grid-wrapper {
+  max-height: calc(100vh - 230px);
+  padding-right: 4px;
+}
+
+.projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1.25rem;
+}
+
+.project-card {
+  background-color: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.project-card:hover {
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary);
+}
+
+.project-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.project-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.badges-container {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.status-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+  font-weight: 600;
+}
+
+.status-en_curso {
+  background-color: var(--color-primary-light);
+  color: var(--color-primary);
+}
+
+.status-completado {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: var(--color-success);
+}
+
+.status-pausado {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: var(--color-warning);
+}
+
+.status-nuevo {
+  background-color: rgba(253, 24, 67, 0.15);
+  color: var(--color-primary);
+  border: 1px solid var(--color-primary);
+}
+
+.project-category {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.project-progress-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 8px;
+  background-color: var(--border-color);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-fill {
+  height: 100%;
+  background-color: var(--color-primary);
+  border-radius: 4px;
+}
+
+.project-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-top: 1px solid var(--border-color);
+  padding-top: 0.75rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+/* =========================================================================
+   10. MODALES, CAPAS Z-INDEX Y ALINEACIÓN DE ADJUNTOS
    ========================================================================= */
 .modal-overlay {
   position: fixed;
@@ -827,12 +1052,25 @@ select:focus, input:focus, textarea:focus {
   padding: 1rem;
 }
 
+#project-detail-modal {
+  z-index: 2000 !important;
+}
+
+#agenda-task-modal {
+  z-index: 2500 !important;
+}
+
+#confirm-delete-modal,
+#custom-alert-modal {
+  z-index: 3000 !important;
+}
+
 .modal-card {
   background-color: var(--bg-surface);
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   width: 100%;
-  max-width: 480px;
+  max-width: 520px;
   padding: 1.5rem;
   box-shadow: var(--shadow-lg);
 }
@@ -850,9 +1088,9 @@ select:focus, input:focus, textarea:focus {
 
 .modal-card-large {
   width: 90vw;
-  max-width: 820px;
+  max-width: 860px;
   height: 85vh;
-  max-height: 680px;
+  max-height: 700px;
   display: flex;
   flex-direction: column;
 }
@@ -930,9 +1168,60 @@ select:focus, input:focus, textarea:focus {
 
 .form-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 1rem;
   width: 100%;
+}
+
+.form-row.trio-row {
+  grid-template-columns: 1fr 100px 1fr;
+}
+
+.form-row.quad-row {
+  grid-template-columns: 1fr 1fr 100px 1fr;
+}
+
+/* ALINEACIÓN PERFECTA DEL BOTÓN AÑADIR TAREA CON CAJA DE ADJUNTO */
+.attachment-action-row {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  width: 100%;
+}
+
+.attachment-input-group {
+  flex-grow: 1;
+}
+
+.btn-align-bottom {
+  display: flex;
+  align-items: flex-end;
+}
+
+.attachment-info-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 0.35rem;
+  background-color: var(--bg-main);
+  padding: 0.4rem 0.65rem;
+  border-radius: var(--radius-sm);
+}
+
+.btn-remove-attachment {
+  background: none;
+  border: none;
+  color: var(--color-danger);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.btn-remove-attachment:hover {
+  background-color: rgba(239, 68, 68, 0.1);
 }
 
 .baseline-box {
@@ -986,129 +1275,8 @@ select:focus, input:focus, textarea:focus {
 }
 
 /* =========================================================================
-   MÓDULO DE PROYECTOS, CALENDARIO Y REPORTES
+   11. CALENDARIO Y VISTA DE REPORTES
    ========================================================================= */
-.projects-actions-bar {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 1.25rem;
-}
-
-.search-box {
-  flex-grow: 1;
-  min-width: 200px;
-}
-
-.projects-filters {
-  display: flex;
-  gap: 0.5rem;
-}
-
-.projects-grid-wrapper {
-  max-height: calc(100vh - 230px);
-  padding-right: 4px;
-}
-
-.projects-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-  gap: 1.25rem;
-}
-
-.project-card {
-  background-color: var(--bg-surface);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
-  padding: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1rem;
-  cursor: pointer;
-  transition: var(--transition);
-}
-
-.project-card:hover {
-  box-shadow: var(--shadow-md);
-  border-color: var(--color-primary);
-}
-
-.project-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-start;
-  gap: 0.5rem;
-}
-
-.project-title {
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.badges-container {
-  display: flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.status-badge {
-  font-size: 0.7rem;
-  padding: 0.2rem 0.6rem;
-  border-radius: 20px;
-  font-weight: 600;
-}
-
-.status-en_curso { background-color: var(--color-primary-light); color: var(--color-primary); }
-.status-completado { background-color: rgba(16, 185, 129, 0.1); color: var(--color-success); }
-.status-pausado { background-color: rgba(245, 158, 11, 0.1); color: var(--color-warning); }
-.status-nuevo { background-color: rgba(253, 24, 67, 0.15); color: var(--color-primary); border: 1px solid var(--color-primary); }
-
-.project-category {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-.project-progress-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.8rem;
-  font-weight: 600;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 8px;
-  background-color: var(--border-color);
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: var(--color-primary);
-  border-radius: 4px;
-}
-
-.project-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  border-top: 1px solid var(--border-color);
-  padding-top: 0.75rem;
-  font-size: 0.8rem;
-  color: var(--text-muted);
-}
-
-/* ESTILOS Y ESPACIADO DEL LISTADO DE PROYECTOS EN REPORTES */
 .reports-projects-list {
   display: flex;
   flex-direction: column;

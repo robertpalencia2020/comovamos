@@ -13,9 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
   initReportsModule();
   initBaselineAuthModalEvents();
   initCustomModals();
+  initSearchClearButtons();
 });
 
-// Control de Modales de Alerta y Confirmación
+// MODALES DE ALERTA Y CONFIRMACIÓN
 let confirmCallback = null;
 
 function initCustomModals() {
@@ -61,7 +62,27 @@ function showConfirmDeleteModal(itemTitle, onConfirm) {
   confirmModal.classList.remove('hidden');
 }
 
-// NAVEGACIÓN DIRECTA DESDE LOS KPIS DEL DASHBOARD
+// BÚSQUEDA CON BOTÓN "X" PARA LIMPIAR
+function initSearchClearButtons() {
+  const searchInput = document.getElementById('project-search-input');
+  const clearBtn = document.getElementById('clear-project-search-btn');
+
+  if (searchInput && clearBtn) {
+    searchInput.addEventListener('input', () => {
+      if (searchInput.value.trim().length > 0) clearBtn.classList.remove('hidden');
+      else clearBtn.classList.add('hidden');
+    });
+
+    clearBtn.onclick = () => {
+      searchInput.value = '';
+      clearBtn.classList.add('hidden');
+      const activeFilter = document.querySelector('[data-proj-filter].active')?.getAttribute('data-proj-filter') || 'todos';
+      renderProjectsList(activeFilter, '');
+    };
+  }
+}
+
+// NAVEGACIÓN LIMPIA Y DIRECCIONADA DESDE EL DASHBOARD
 function initDashboardKPIEvents() {
   const kpiProjects = document.getElementById('kpi-card-projects');
   const kpiPending = document.getElementById('kpi-card-pending');
@@ -70,15 +91,32 @@ function initDashboardKPIEvents() {
   if (kpiProjects) {
     kpiProjects.onclick = () => switchView('projects');
   }
+
   if (kpiPending) {
-    kpiPending.onclick = () => switchView('agenda');
+    kpiPending.onclick = () => {
+      switchView('agenda');
+      setAgendaFilter('pendientes');
+    };
   }
+
   if (kpiOverdue) {
-    kpiOverdue.onclick = () => switchView('agenda');
+    kpiOverdue.onclick = () => {
+      switchView('agenda');
+      setAgendaFilter('vencidas');
+    };
   }
 }
 
-// Control de Tema
+function setAgendaFilter(filterType) {
+  const buttons = document.querySelectorAll('.task-filters .filter-btn');
+  buttons.forEach(btn => {
+    if (btn.getAttribute('data-filter') === filterType) btn.classList.add('active');
+    else btn.classList.remove('active');
+  });
+  renderDailyAgenda(filterType);
+}
+
+// CONTROL DE TEMA Y SIDEBAR
 function initTheme() {
   const themeBtn = document.getElementById('theme-toggle-btn');
   const themeIcon = document.getElementById('theme-icon');
@@ -102,7 +140,6 @@ function initTheme() {
   }
 }
 
-// Control del Sidebar
 function initSidebar() {
   const sidebar = document.getElementById('sidebar');
   const pinBtn = document.getElementById('pin-sidebar-btn');
@@ -177,6 +214,10 @@ function switchView(viewName) {
   const titleEl = document.getElementById('page-title');
   if (titleEl) titleEl.textContent = titles[viewName] || 'Comovamos';
 
+  if (viewName === 'agenda') {
+    const activeFilter = document.querySelector('.task-filters .filter-btn.active')?.getAttribute('data-filter') || 'todas';
+    renderDailyAgenda(activeFilter);
+  }
   if (viewName === 'reports') renderReportsView();
   if (viewName === 'calendar') renderCalendarView();
 
@@ -189,13 +230,57 @@ function checkInitialView() {
 }
 
 // =========================================================================
-// MÓDULO DE SEGUIMIENTO Y GESTIÓN DE TAREAS POPUP CON DESCRIPCIÓN
+// MÓDULO DE SEGUIMIENTO Y GESTIÓN DE TAREAS Y DURACIÓN
 // =========================================================================
 
 function initTasksModule() {
+  const todayStr = new Date().toISOString().split('T')[0];
+  const desdeInput = document.getElementById('agenda-filter-desde');
+  const hastaInput = document.getElementById('agenda-filter-hasta');
+
+  if (desdeInput) desdeInput.value = todayStr;
+  if (hastaInput) hastaInput.value = todayStr;
+
+  if (desdeInput) desdeInput.onchange = () => triggerAgendaFilter();
+  if (hastaInput) hastaInput.onchange = () => triggerAgendaFilter();
+
+  bindDurationCalculationEvents('agenda-task-start-date', 'agenda-task-end-date', 'agenda-task-duration');
+  bindDurationCalculationEvents('proj-task-start-date', 'proj-task-end-date', 'proj-task-duration');
+
   renderDashboardKPIs();
   renderDailyAgenda('todas');
   setupAgendaTaskEvents();
+}
+
+// BINDING BIDIRECCIONAL: FECHAS <-> DURACIÓN EN DÍAS
+function bindDurationCalculationEvents(startId, endId, durationId) {
+  const startEl = document.getElementById(startId);
+  const endEl = document.getElementById(endId);
+  const durEl = document.getElementById(durationId);
+
+  if (!startEl || !endEl || !durEl) return;
+
+  const updateFromDates = () => {
+    if (startEl.value && endEl.value) {
+      const days = calculateTaskDurationInDays(startEl.value, endEl.value);
+      durEl.value = days;
+    }
+  };
+
+  const updateFromDuration = () => {
+    if (startEl.value && durEl.value) {
+      endEl.value = addDaysToIsoDate(startEl.value, durEl.value);
+    }
+  };
+
+  startEl.addEventListener('change', updateFromDates);
+  endEl.addEventListener('change', updateFromDates);
+  durEl.addEventListener('input', updateFromDuration);
+}
+
+function triggerAgendaFilter() {
+  const activeFilter = document.querySelector('.task-filters .filter-btn.active')?.getAttribute('data-filter') || 'todas';
+  renderDailyAgenda(activeFilter);
 }
 
 function renderDashboardKPIs() {
@@ -227,11 +312,30 @@ function renderDailyAgenda(filter = 'todas') {
   const projects = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECTS) || '[]');
   const todayStr = new Date().toISOString().split('T')[0];
 
-  if (filter === 'pendientes') tasks = tasks.filter(t => t.status !== 'completado');
-  else if (filter === 'completadas') tasks = tasks.filter(t => t.status === 'completado');
+  const desdeVal = document.getElementById('agenda-filter-desde')?.value;
+  const hastaVal = document.getElementById('agenda-filter-hasta')?.value;
+
+  if (filter === 'pendientes') {
+    tasks = tasks.filter(t => t.status !== 'completado');
+  } else if (filter === 'completadas') {
+    tasks = tasks.filter(t => t.status === 'completado');
+  } else if (filter === 'vencidas') {
+    tasks = tasks.filter(t => (t.overdue || t.endDate < todayStr) && t.status !== 'completado');
+  }
+
+  if (desdeVal && hastaVal) {
+    tasks = tasks.filter(t => {
+      const taskStart = t.startDate || t.date;
+      const taskEnd = t.endDate || t.date;
+      return taskStart <= hastaVal && taskEnd >= desdeVal;
+    });
+  }
+
+  // ORDENAR SIEMPRE POR FECHA DE INICIO ASCENDENTE
+  tasks.sort((a, b) => (a.startDate || a.date).localeCompare(b.startDate || b.date));
 
   if (tasks.length === 0) {
-    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;"><p>No hay tareas registradas.</p></div>';
+    container.innerHTML = '<div style="text-align: center; color: var(--text-muted); padding: 2rem;"><p>No hay tareas que coincidan con los filtros seleccionados.</p></div>';
     return;
   }
 
@@ -243,7 +347,8 @@ function renderDailyAgenda(filter = 'todas') {
     }
 
     const isOverdue = (task.overdue || task.endDate < todayStr) && task.status !== 'completado';
-    const formattedDateRange = `${task.startDate}&nbsp;&nbsp;al&nbsp;&nbsp;${task.endDate}`;
+    const formattedRange = `${formatDateDisplay(task.startDate)} al ${formatDateDisplay(task.endDate)}`;
+    const durationDays = task.durationDays || calculateTaskDurationInDays(task.startDate, task.endDate);
 
     return `
       <div class="task-card ${isOverdue ? 'overdue' : ''}" onclick="openAgendaTaskModal('${task.id}')">
@@ -259,8 +364,9 @@ function renderDailyAgenda(filter = 'todas') {
           ${task.description ? `<p class="task-desc-text">${task.description}</p>` : ''}
           <div class="task-meta">
             <span class="task-badge priority-${task.priority}">Prioridad ${task.priority}</span>
+            <span class="task-badge duration-badge">⏱️ ${durationDays} d</span>
             ${isOverdue ? '<span class="task-badge status-vencida blink">⚠️ VENCIDA</span>' : ''}
-            <span class="date-label">${formattedDateRange}</span>
+            <span class="date-label">${formattedRange}</span>
             ${task.attachmentName ? `<span class="attachment-badge">📎 ${task.attachmentName}</span>` : ''}
           </div>
         </div>
@@ -291,7 +397,7 @@ function shareTaskEmail(taskId) {
   if (!task) return;
 
   const subject = encodeURIComponent(`Tarea: ${task.title}`);
-  const body = encodeURIComponent(`Hola,\n\nTe comparto los detalles de la tarea:\n\n📌 Tarea: ${task.title}\n📝 Descripción: ${task.description || 'Sin descripción'}\n📅 Fechas: ${task.startDate} al ${task.endDate}\n⚡ Prioridad: ${task.priority}\n\nEnviado desde Comovamos.`);
+  const body = encodeURIComponent(`Hola,\n\nTe comparto los detalles de la tarea:\n\n📌 Tarea: ${task.title}\n📝 Descripción: ${task.description || 'Sin descripción'}\n📅 Fechas: ${formatDateDisplay(task.startDate)} al ${formatDateDisplay(task.endDate)} (${task.durationDays || 1} días)\n⚡ Prioridad: ${task.priority}\n\nEnviado desde Comovamos.`);
   window.open(`mailto:?subject=${subject}&body=${body}`, '_blank');
 }
 
@@ -300,7 +406,7 @@ function shareTaskWhatsApp(taskId) {
   const task = tasks.find(t => t.id === taskId);
   if (!task) return;
 
-  const text = encodeURIComponent(`📌 *Tarea:* ${task.title}\n📝 *Descripción:* ${task.description || 'Sin descripción'}\n📅 *Fechas:* ${task.startDate} al ${task.endDate}\n⚡ *Prioridad:* ${task.priority.toUpperCase()}\n\n_Gestor de Proyectos Comovamos_`);
+  const text = encodeURIComponent(`📌 *Tarea:* ${task.title}\n📝 *Descripción:* ${task.description || 'Sin descripción'}\n📅 *Fechas:* ${formatDateDisplay(task.startDate)} al ${formatDateDisplay(task.endDate)} (${task.durationDays || 1} días)\n⚡ *Prioridad:* ${task.priority.toUpperCase()}\n\n_Gestor de Proyectos Comovamos_`);
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 
@@ -315,9 +421,10 @@ function requestDeleteTask(taskId) {
     
     if (task.projectId && task.projectId !== 'personal') {
       recalculateProjectMetrics(task.projectId);
+      renderProjectDetailTasks(task.projectId);
     }
     renderDashboardKPIs();
-    renderDailyAgenda();
+    triggerAgendaFilter();
   });
 }
 
@@ -334,21 +441,32 @@ function toggleTaskStatus(taskId) {
   });
 
   localStorage.setItem(CONFIG.STORAGE_KEYS.TASKS, JSON.stringify(tasks));
-  if (affectedProjId && affectedProjId !== 'personal') recalculateProjectMetrics(affectedProjId);
+  if (affectedProjId && affectedProjId !== 'personal') {
+    recalculateProjectMetrics(affectedProjId);
+    renderProjectDetailTasks(affectedProjId);
+  }
 
   renderDashboardKPIs();
-  renderDailyAgenda();
+  triggerAgendaFilter();
 }
+
+// MODAL DE MODIFICACIÓN DE TAREA CON ELIMINACIÓN DE ARCHIVO
+let pendingRemoveAttachment = false;
 
 function openAgendaTaskModal(taskId = null) {
   const modal = document.getElementById('agenda-task-modal');
   const projectSelect = document.getElementById('agenda-task-project');
   const titleEl = document.getElementById('agenda-task-modal-title');
+  const currentFileDiv = document.getElementById('agenda-task-current-file');
   const todayStr = new Date().toISOString().split('T')[0];
+
+  pendingRemoveAttachment = false;
 
   const projects = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECTS) || '[]');
   projectSelect.innerHTML = '<option value="personal">👤 Tarea personal / Suelta (Calendario personal)</option>' +
     projects.map(p => `<option value="${p.id}">📁 ${p.name}</option>`).join('');
+
+  document.getElementById('agenda-task-file').value = '';
 
   if (taskId) {
     const tasks = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.TASKS) || '[]');
@@ -364,15 +482,37 @@ function openAgendaTaskModal(taskId = null) {
     document.getElementById('agenda-task-status').value = task.status || 'pendiente';
     document.getElementById('agenda-task-start-date').value = task.startDate || todayStr;
     document.getElementById('agenda-task-end-date').value = task.endDate || todayStr;
+    document.getElementById('agenda-task-duration').value = task.durationDays || calculateTaskDurationInDays(task.startDate, task.endDate);
+
+    if (currentFileDiv) {
+      if (task.attachmentName) {
+        currentFileDiv.innerHTML = `
+          <span>📎 ${task.attachmentName}</span>
+          <button type="button" class="btn-remove-attachment" onclick="flagRemoveTaskAttachment()">✕ Eliminar</button>
+        `;
+      } else {
+        currentFileDiv.innerHTML = '<span class="text-muted">Sin adjunto previo.</span>';
+      }
+    }
   } else {
     titleEl.textContent = 'Agregar tarea';
     document.getElementById('agenda-task-form').reset();
     document.getElementById('agenda-task-id').value = '';
     document.getElementById('agenda-task-start-date').value = todayStr;
     document.getElementById('agenda-task-end-date').value = todayStr;
+    document.getElementById('agenda-task-duration').value = 1;
+    if (currentFileDiv) currentFileDiv.innerHTML = '';
   }
 
   modal.classList.remove('hidden');
+}
+
+function flagRemoveTaskAttachment() {
+  pendingRemoveAttachment = true;
+  const currentFileDiv = document.getElementById('agenda-task-current-file');
+  if (currentFileDiv) {
+    currentFileDiv.innerHTML = '<span style="color: var(--color-danger); font-weight: 600;">Archivo marcado para eliminación. Guarde los cambios.</span>';
+  }
 }
 
 function setupAgendaTaskEvents() {
@@ -403,6 +543,8 @@ function setupAgendaTaskEvents() {
       const status = document.getElementById('agenda-task-status').value;
       const startDate = document.getElementById('agenda-task-start-date').value;
       const endDate = document.getElementById('agenda-task-end-date').value;
+      const durationDays = parseInt(document.getElementById('agenda-task-duration').value, 10) || 1;
+      const fileInput = document.getElementById('agenda-task-file');
 
       if (new Date(startDate) > new Date(endDate)) {
         showCustomAlert('La fecha de fin no puede ser menor a la fecha de inicio de la tarea.', 'Validación de Fechas');
@@ -423,8 +565,15 @@ function setupAgendaTaskEvents() {
             t.status = status;
             t.startDate = startDate;
             t.endDate = endDate;
+            t.durationDays = durationDays;
             t.date = endDate;
             t.overdue = isOverdue;
+
+            if (pendingRemoveAttachment) {
+              t.attachmentName = null;
+            } else if (fileInput.files[0]) {
+              t.attachmentName = fileInput.files[0].name;
+            }
           }
           return t;
         });
@@ -436,11 +585,12 @@ function setupAgendaTaskEvents() {
           description: description,
           startDate: startDate,
           endDate: endDate,
+          durationDays: durationDays,
           date: endDate,
           status: status,
           priority: priority,
           overdue: isOverdue,
-          attachmentName: null
+          attachmentName: fileInput.files[0] ? fileInput.files[0].name : null
         });
       }
 
@@ -448,10 +598,11 @@ function setupAgendaTaskEvents() {
 
       if (projectId && projectId !== 'personal') {
         recalculateProjectMetrics(projectId);
+        renderProjectDetailTasks(projectId);
       }
 
       renderDashboardKPIs();
-      renderDailyAgenda();
+      triggerAgendaFilter();
       closeModal();
     };
   }
@@ -466,7 +617,7 @@ function setupAgendaTaskEvents() {
 }
 
 // =========================================================================
-// MÓDULO DE PROYECTOS Y TOGGLE VISTA CAJAS / LISTA CORREGIDO
+// PROYECTOS Y RECALCULO DE AVANCE REACTIVO EN TIEMPO REAL
 // =========================================================================
 
 let projectViewMode = localStorage.getItem(CONFIG.STORAGE_KEYS.PROJECT_VIEW_MODE) || 'grid';
@@ -510,8 +661,18 @@ function recalculateProjectMetrics(projectId) {
         p.progress = 0;
         p.endDate = p.baselineEndDate || p.endDate;
       } else {
-        const completed = tasks.filter(t => t.status === 'completado').length;
-        p.progress = Math.round((completed / tasks.length) * 100);
+        let totalWeightInDays = 0;
+        let completedWeightInDays = 0;
+
+        tasks.forEach(t => {
+          const taskWeight = t.durationDays || calculateTaskDurationInDays(t.startDate, t.endDate);
+          totalWeightInDays += taskWeight;
+          if (t.status === 'completado') {
+            completedWeightInDays += taskWeight;
+          }
+        });
+
+        p.progress = totalWeightInDays > 0 ? Math.round((completedWeightInDays / totalWeightInDays) * 100) : 0;
 
         const endDates = tasks.map(t => t.endDate).filter(Boolean).sort();
         if (endDates.length > 0) {
@@ -574,7 +735,7 @@ function renderProjectsList(filter = 'todos', searchTerm = '') {
 
         <div class="project-progress-wrapper">
           <div class="progress-header">
-            <span>Avance</span>
+            <span>Avance (Ponderado)</span>
             <span>${proj.progress}%</span>
           </div>
           <div class="progress-bar">
@@ -583,7 +744,7 @@ function renderProjectsList(filter = 'todos', searchTerm = '') {
         </div>
 
         <div class="project-footer">
-          <span>Estimado fin: <strong>${proj.endDate}</strong></span>
+          <span>Estimado fin: <strong>${formatDateDisplay(proj.endDate)}</strong></span>
           <button class="action-icon-btn delete" onclick="event.stopPropagation(); deleteProject('${proj.id}')">✕</button>
         </div>
       </div>
@@ -629,6 +790,7 @@ function openProjectDetailModal(projectId) {
   const todayStr = new Date().toISOString().split('T')[0];
   document.getElementById('proj-task-start-date').value = todayStr;
   document.getElementById('proj-task-end-date').value = todayStr;
+  document.getElementById('proj-task-duration').value = 1;
 
   recalculateProjectMetrics(projectId);
   renderProjectDetailTasks(projectId);
@@ -637,13 +799,17 @@ function openProjectDetailModal(projectId) {
   modal.classList.remove('hidden');
 }
 
-// PERMITIR ABRIR EL DETALLE DE TAREA DESDE LA PESTAÑA DE TAREAS EN EL PROYECTO
+// ACTUALIZACIÓN REACTIVA E INMEDIATA EN PESTAÑA TAREAS DEL PROYECTO
 function renderProjectDetailTasks(projectId) {
   const container = document.getElementById('proj-detail-tasks-list');
   const countEl = document.getElementById('detail-tasks-count');
   if (!container) return;
 
-  const tasks = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.TASKS) || '[]').filter(t => t.projectId === projectId);
+  let tasks = JSON.parse(localStorage.getItem(CONFIG.STORAGE_KEYS.TASKS) || '[]').filter(t => t.projectId === projectId);
+  
+  // ORDENAR SIEMPRE POR FECHA DE INICIO ASCENDENTE
+  tasks.sort((a, b) => (a.startDate || a.date).localeCompare(b.startDate || b.date));
+
   if (countEl) countEl.textContent = tasks.length;
 
   if (tasks.length === 0) {
@@ -651,23 +817,29 @@ function renderProjectDetailTasks(projectId) {
     return;
   }
 
-  container.innerHTML = tasks.map(t => `
-    <div class="task-card" onclick="openAgendaTaskModal('${t.id}')">
-      <div class="task-checkbox ${t.status === 'completado' ? 'checked' : ''}" onclick="event.stopPropagation(); toggleTaskStatus('${t.id}'); renderProjectDetailTasks('${projectId}');">
-        ${t.status === 'completado' ? '✓' : ''}
-      </div>
-      <div class="task-details">
-        <span class="task-title ${t.status === 'completado' ? 'completed' : ''}">${t.title}</span>
-        ${t.description ? `<p class="task-desc-text">${t.description}</p>` : ''}
-        <div class="task-meta">
-          <span class="task-badge priority-${t.priority}">Prioridad ${t.priority}</span>
-          <span class="date-label">${t.startDate}&nbsp;&nbsp;al&nbsp;&nbsp;${t.endDate}</span>
-          ${t.attachmentName ? `<span class="attachment-badge">📎 ${t.attachmentName}</span>` : ''}
+  container.innerHTML = tasks.map(t => {
+    const formattedRange = `${formatDateDisplay(t.startDate)} al ${formatDateDisplay(t.endDate)}`;
+    const durationDays = t.durationDays || calculateTaskDurationInDays(t.startDate, t.endDate);
+
+    return `
+      <div class="task-card" onclick="openAgendaTaskModal('${t.id}')">
+        <div class="task-checkbox ${t.status === 'completado' ? 'checked' : ''}" onclick="event.stopPropagation(); toggleTaskStatus('${t.id}'); renderProjectDetailTasks('${projectId}');">
+          ${t.status === 'completado' ? '✓' : ''}
         </div>
+        <div class="task-details">
+          <span class="task-title ${t.status === 'completado' ? 'completed' : ''}">${t.title}</span>
+          ${t.description ? `<p class="task-desc-text">${t.description}</p>` : ''}
+          <div class="task-meta">
+            <span class="task-badge priority-${t.priority}">Prioridad ${t.priority}</span>
+            <span class="task-badge duration-badge">⏱️ ${durationDays} d</span>
+            <span class="date-label">${formattedRange}</span>
+            ${t.attachmentName ? `<span class="attachment-badge">📎 ${t.attachmentName}</span>` : ''}
+          </div>
+        </div>
+        <button class="action-icon-btn delete" onclick="event.stopPropagation(); requestDeleteTask('${t.id}'); renderProjectDetailTasks('${projectId}');">✕</button>
       </div>
-      <button class="action-icon-btn delete" onclick="event.stopPropagation(); requestDeleteTask('${t.id}'); renderProjectDetailTasks('${projectId}');">✕</button>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderProjectAttachments(proj) {
@@ -755,6 +927,7 @@ function setupProjectDetailModalEvents() {
       const priority = document.getElementById('proj-task-priority').value;
       const startDate = document.getElementById('proj-task-start-date').value;
       const endDate = document.getElementById('proj-task-end-date').value;
+      const durationDays = parseInt(document.getElementById('proj-task-duration').value, 10) || 1;
       const fileInput = document.getElementById('proj-task-file');
 
       if (!title || !activeDetailProjectId) return;
@@ -772,6 +945,7 @@ function setupProjectDetailModalEvents() {
         description: description.trim(),
         startDate: startDate,
         endDate: endDate,
+        durationDays: durationDays,
         date: endDate,
         status: 'pendiente',
         priority: priority,
@@ -789,6 +963,7 @@ function setupProjectDetailModalEvents() {
       recalculateProjectMetrics(activeDetailProjectId);
       renderProjectDetailTasks(activeDetailProjectId);
       renderDashboardKPIs();
+      triggerAgendaFilter();
     };
   }
 
@@ -818,7 +993,6 @@ function setupProjectDetailModalEvents() {
   }
 }
 
-// EVENTOS DE CAMBIO DE MODO VISTA LISTA / VISTA CAJAS CORREGIDOS
 function setupProjectsEvents() {
   const openModalBtn = document.getElementById('open-project-modal-btn');
   const closeModalBtn = document.getElementById('close-project-modal-btn');
@@ -924,10 +1098,7 @@ function setupProjectsEvents() {
   });
 }
 
-// =========================================================================
-// CALENDARIO Y VISTA DE REPORTES (PROYECTOS INTERACTIVOS CON MÁS ESPACIO)
-// =========================================================================
-
+// CALENDARIO Y REPORTES
 let currentCalDate = new Date();
 
 function initCalendarModule() {

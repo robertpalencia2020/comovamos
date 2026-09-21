@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Comovamos | Gestor de proyectos v10</title>
+  <title>Comovamos | Gestor de proyectos</title>
   
   <!-- Favicon icono grid_view (True Pink) -->
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23FD1843'><path d='M3 3h8v8H3V3zm0 10h8v8H3v-8zm10-10h8v8h-8V3zm0 10h8v8h-8v-8z'/></svg>">
@@ -109,6 +109,8 @@
           </svg>
           <span class="link-text">Cerrar sesión</span>
         </button>
+        <!-- Versión de la App en Footer -->
+        <div class="sidebar-version">v202609211932</div>
       </div>
     </aside>
 
@@ -180,8 +182,10 @@
         <!-- Vista Proyectos -->
         <section id="view-projects" class="view-pane hidden">
           <div class="projects-actions-bar">
+            <!-- Buscador con botón "X" -->
             <div class="search-box">
               <input type="text" id="project-search-input" placeholder="Buscar proyecto..." />
+              <button id="clear-project-search-btn" class="clear-search-btn hidden" title="Limpiar búsqueda">✕</button>
             </div>
             
             <div class="projects-filters">
@@ -211,10 +215,10 @@
           </div>
         </section>
 
-        <!-- Vista Seguimiento (Rediseñada con Barra Unificada) -->
+        <!-- Vista Seguimiento -->
         <section id="view-agenda" class="view-pane hidden">
           <div class="agenda-header">
-            <h3>Seguimiento de hoy</h3>
+            <h3>Seguimiento de tareas</h3>
             <span id="current-date-label" class="date-label"></span>
           </div>
 
@@ -223,6 +227,12 @@
               <button class="filter-btn active" data-filter="todas">Todas</button>
               <button class="filter-btn" data-filter="pendientes">Pendientes</button>
               <button class="filter-btn" data-filter="completadas">Completadas</button>
+              <button class="filter-btn" data-filter="vencidas">Vencidas</button>
+            </div>
+
+            <div class="agenda-date-range">
+              <label>Desde: <input type="date" id="agenda-filter-desde" /></label>
+              <label>Hasta: <input type="date" id="agenda-filter-hasta" /></label>
             </div>
             
             <button id="open-agenda-task-modal-btn" class="btn-add-task">+ Agregar tarea</button>
@@ -231,7 +241,7 @@
           <div id="daily-tasks-list" class="tasks-container scrollable-area" style="margin-top: 1rem;"></div>
         </section>
 
-        <!-- Vista Calendario de actividades -->
+        <!-- Vista Calendario -->
         <section id="view-calendar" class="view-pane hidden">
           <div class="calendar-wrapper">
             <div class="calendar-header-bar">
@@ -339,7 +349,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE INCLUSIÓN / EDICIÓN DE TAREA CON DESCRIPCIÓN -->
+  <!-- MODAL DE INCLUSIÓN / EDICIÓN DE TAREA CON DURACIÓN Y ELIMINACIÓN DE ADJUNTO -->
   <div id="agenda-task-modal" class="modal-overlay hidden">
     <div class="modal-card">
       <div class="modal-header">
@@ -384,15 +394,27 @@
           </div>
         </div>
 
-        <div class="form-row">
+        <!-- Fechas y Duración en Días Interactiva -->
+        <div class="form-row trio-row">
           <div class="form-group">
-            <label for="agenda-task-start-date">Fecha de inicio</label>
+            <label for="agenda-task-start-date">Fecha inicio</label>
             <input type="date" id="agenda-task-start-date" required />
           </div>
           <div class="form-group">
-            <label for="agenda-task-end-date">Fecha de fin</label>
+            <label for="agenda-task-duration">Duración (días)</label>
+            <input type="number" id="agenda-task-duration" min="1" value="1" required />
+          </div>
+          <div class="form-group">
+            <label for="agenda-task-end-date">Fecha fin</label>
             <input type="date" id="agenda-task-end-date" required />
           </div>
+        </div>
+
+        <!-- Archivo Adjunto con opción de eliminación -->
+        <div class="form-group">
+          <label for="agenda-task-file">Archivo adjunto</label>
+          <input type="file" id="agenda-task-file" class="file-input-compact" />
+          <div id="agenda-task-current-file" class="attachment-info-row"></div>
         </div>
 
         <div class="modal-actions">
@@ -403,7 +425,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE DATA-ENTRY DETALLADO DE PROYECTO -->
+  <!-- MODAL DE DETALLE DE PROYECTO -->
   <div id="project-detail-modal" class="modal-overlay hidden">
     <div class="modal-card modal-card-large">
       <div class="modal-header">
@@ -451,7 +473,7 @@
                 </select>
               </div>
               <div class="form-group">
-                <label>Porcentaje de Avance (Calculado)</label>
+                <label>Avance (Ponderado por duración)</label>
                 <div id="detail-proj-progress-badge" class="calc-progress-badge">0%</div>
               </div>
             </div>
@@ -501,7 +523,7 @@
               <textarea id="proj-task-desc" rows="2" placeholder="Detalles o requerimientos técnicos de la tarea..."></textarea>
             </div>
 
-            <div class="form-row trio-row">
+            <div class="form-row quad-row">
               <div class="form-group">
                 <label for="proj-task-priority">Prioridad</label>
                 <select id="proj-task-priority">
@@ -511,21 +533,26 @@
                 </select>
               </div>
               <div class="form-group">
-                <label for="proj-task-start-date">Fecha de inicio</label>
+                <label for="proj-task-start-date">Fecha inicio</label>
                 <input type="date" id="proj-task-start-date" required />
               </div>
               <div class="form-group">
-                <label for="proj-task-end-date">Fecha de fin</label>
+                <label for="proj-task-duration">Duración (días)</label>
+                <input type="number" id="proj-task-duration" min="1" value="1" required />
+              </div>
+              <div class="form-group">
+                <label for="proj-task-end-date">Fecha fin</label>
                 <input type="date" id="proj-task-end-date" required />
               </div>
             </div>
 
-            <div class="form-row attachment-action-row">
-              <div class="form-group">
+            <!-- Alineación perfecta del botón Añadir Tarea -->
+            <div class="attachment-action-row">
+              <div class="form-group attachment-input-group">
                 <label for="proj-task-file">Adjunto de la tarea (Opcional)</label>
                 <input type="file" id="proj-task-file" class="file-input-compact" />
               </div>
-              <div class="form-group btn-align-bottom">
+              <div class="btn-align-bottom">
                 <button type="submit" class="btn-add-task">+ Añadir Tarea</button>
               </div>
             </div>
@@ -578,7 +605,7 @@
     </div>
   </div>
 
-  <!-- MODAL DE NOTIFICACIÓN DE ADVERTENCIA / VALIDACIÓN -->
+  <!-- MODALES DE ALERTA Y CONFIRMACIÓN -->
   <div id="custom-alert-modal" class="modal-overlay hidden">
     <div class="modal-card modal-card-alert">
       <div class="modal-header">
@@ -592,7 +619,6 @@
     </div>
   </div>
 
-  <!-- MODAL DE CONFIRMACIÓN DE ELIMINACIÓN DE TAREA -->
   <div id="confirm-delete-modal" class="modal-overlay hidden">
     <div class="modal-card modal-card-alert">
       <div class="modal-header">
